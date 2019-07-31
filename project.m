@@ -1,14 +1,19 @@
 %%
 %Caricamento e visualizzazione delle immagini del dataset
+clc;
+clearvars;
 
-pathFede = 'C:\Users\fedus\Desktop\Magistrale\Primo Anno\Secondo Semestre\CV\Lab\Progetto\Data\fashion-product-images-reduced';
+tic;
+pathFede = 'C:\Users\fedus\Desktop\Magistrale\Primo Anno\Secondo Semestre\CV\Lab\Progetto\Data\fashion-product-images-reduced\fashion-dataset\images_type';
 pathNick = '/home/nikola/UniCa/Magistrale/[1 anno - II]CV - Puglisi/Progetto';
-path=pathNick;
+path=pathFede;
 
 %%
 %Creazione del Datastore
 imds = imageDatastore(path,'IncludeSubfolders',true,'LabelSource','foldernames');
 [imdsTrain,imdsTest] = splitEachLabel(imds,0.7,'randomized');
+
+
 
 %%
 %numTrainImages = numel(imdsTrain.Labels);
@@ -22,7 +27,8 @@ imds = imageDatastore(path,'IncludeSubfolders',true,'LabelSource','foldernames')
 
 %%
 %Caricamente ResNet-18
-net = resnet18;
+%net = resnet18;
+net = alexnet;
 inputSize = net.Layers(1).InputSize;
 analyzeNetwork(net);
 
@@ -33,7 +39,8 @@ augimdsTest = augmentedImageDatastore(inputSize(1:2),imdsTest);
 
 %%
 %Creazione pool5 (estrazione features)
-layer = 'pool5';
+%layer = 'pool5';
+layer = 'prob';
 featuresTrain = activations(net,augimdsTrain,layer,'OutputAs','rows');
 featuresTest = activations(net,augimdsTest,layer,'OutputAs','rows');
 
@@ -46,3 +53,23 @@ YTest = imdsTest.Labels;
 
 %Fit Image Classifier
 classifier = fitcecoc(featuresTrain,YTrain);
+
+%%
+%Classificazione immagini di test
+YPred = predict(classifier,featuresTest);
+
+idx = [1:30];
+figure
+for i = 1:numel(idx)
+    subplot(5,6,i)
+    I = readimage(imdsTest,idx(i));
+    label = YPred(idx(i));
+    imshow(I)
+    title(char(label))
+end
+
+accuracy = mean(YPred == YTest)
+%%
+%
+
+tempo=toc
